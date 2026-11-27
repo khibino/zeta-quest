@@ -28,7 +28,7 @@
     // ---- 第2章: データの峠 (New/Reduction/Data) ----
     {
       id: 'params', chapter: 2, icon: 'q₀', name: 'パラメータ (q₀, d)',
-      desc: 'q₀ は 18480 = 16·3·5·7·11 の倍数、d は d ≡ q₀/2 − 1 (mod q₀) をみたす素数。すると d ≡ 7 (mod 8) で、q₀ の素因数はすべて K で分解する。',
+      desc: 'q₀ は 18480 = 16·3·5·7·11 の倍数、d は「q₀ で割った余りが q₀/2 − 1」となる素数 (記号では d ≡ q₀/2 − 1 (mod q₀))。すると d ≡ 7 (mod 8) で、q₀ の素因数はすべて K で分解する。',
       lean: 'Parameters  —  New/Reduction/Data/FieldsAndPlaces',
     },
     {

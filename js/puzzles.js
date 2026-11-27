@@ -330,16 +330,20 @@
   // ---------- 第2章 ----------
   P.params = {
     title: 'パラメータの祠',
-    intro: '(1) 素因数の指数を決めて <b>q₀ = 18480</b> を組み立てよ。<br>(2) d ≡ q₀/2 − 1 = 9239 (mod 18480) をみたす候補から、<b>素数</b>であるものを 1 つ選べ。',
+    intro: '(1) 素因数 2, 3, 5, 7, 11 の指数 (何回掛けるか) を ＋/− で決めて、<b>q₀ = 18480</b> を組み立てよ。<br>(2) d は「<b>q₀ で割った余りが q₀/2 − 1</b>」となる素数でなければならない。q₀ = 18480 なら q₀/2 − 1 = 9240 − 1 = 9239 なので、候補は 9239, 9239 + 18480, 9239 + 2·18480, …。この中から<b>素数</b>であるものを 1 つ選べ。<br><span class="pz-note">記号では d ≡ q₀/2 − 1 (mod q₀) と書く。「a ≡ b (mod n)」は「a と b は n で割った余りが等しい」という意味。</span>',
     hint: '18480 = 16 × 1155。1155 は 3, 5, 7, 11 で割り切れる。候補が合成数だと、選んだときに因数が表示される。',
     build(body) {
       const primes = [2, 3, 5, 7, 11]; const exps = [0, 0, 0, 0, 0];
       const prodEl = h('b', {}, '1');
-      const upd = () => { prodEl.textContent = String(primes.reduce((s, p, i) => s * p ** exps[i], 1)); };
+      const upd = () => {
+        const q = primes.reduce((s, p, i) => s * p ** exps[i], 1);
+        prodEl.textContent = primes.map((p, i) => p + sup(exps[i])).join(' · ') + ' = ' + q + (q === 18480 ? '  ✓' : '');
+      };
       const steps = primes.map((p, i) => stepper(0, 5, 0, (v) => { exps[i] = v; upd(); }));
       const row = h('div', { class: 'pz-row' }, primes.map((p, i) => h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, p + ' の指数'), steps[i])));
       body.appendChild(row);
-      body.appendChild(h('p', {}, 'q₀ = ', prodEl));
+      body.appendChild(h('p', {}, 'いま組み立てた数: ', prodEl, '   (目標: 18480)'));
+      upd();
       let d = null;
       const info = h('p', { class: 'pz-note' }, 'd の候補を選ぶ:');
       const cands = [0, 1, 2, 3, 4, 5].map((k) => 9239 + 18480 * k);

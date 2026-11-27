@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ゼータの旅路 ― 証明クエスト</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <span id="hud-chapter">ゼータの旅路</span>
+    <span id="hud-items"></span>
+    <span id="hud-total"></span>
+    <span class="spacer"></span>
+    <button id="btn-items" type="button">もちもの (I)</button>
+    <button id="btn-notes" type="button">証明ノート (N)</button>
+    <button id="btn-sound" type="button">♪ ON</button>
+  </header>
+
+  <div id="stage">
+    <canvas id="screen" width="640" height="480"></canvas>
+    <div id="toast"></div>
+    <div id="dialog" hidden>
+      <div id="dialog-who"></div>
+      <div id="dialog-text"></div>
+      <div id="dialog-next">▼</div>
+    </div>
+    <div id="fade"></div>
+    <div id="title">
+      <div class="title-zeta">ζ</div>
+      <h1>ゼータの旅路</h1>
+      <p class="title-sub">― リーマン予想 証明クエスト ―</p>
+      <p class="title-desc">概念を集め、具体例を構成し、証明を一歩ずつ進める RPG</p>
+      <div class="title-btns">
+        <button id="btn-continue" type="button" class="primary">つづきから</button>
+        <button id="btn-new" type="button">はじめから</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dpad">
+    <button type="button" data-dir="up" class="d-up">▲</button>
+    <button type="button" data-dir="left" class="d-left">◀</button>
+    <button type="button" data-dir="right" class="d-right">▶</button>
+    <button type="button" data-dir="down" class="d-down">▼</button>
+    <button type="button" id="dpad-act">調べる</button>
+  </div>
+
+  <footer id="help">移動: 矢印キー / WASD / 画面クリック　調べる・話す: スペース / Enter　もちもの: I　証明ノート: N</footer>
+</div>
+
+<div id="modal" hidden>
+  <div id="modal-box">
+    <h2 id="modal-title"></h2>
+    <div id="modal-intro"></div>
+    <div id="modal-body"></div>
+    <div id="modal-msg"></div>
+    <div id="modal-foot"></div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/puzzles.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

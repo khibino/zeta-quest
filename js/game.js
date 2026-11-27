@@ -4,7 +4,7 @@
   const { ITEMS, CHAPTERS } = window.GAME_DATA;
   const PUZZLES = window.PUZZLES;
   const TILE = 32, MW = 20, MH = 15;
-  const SAVE_KEY = 'grh-quest-save-v1';
+  const SAVE_KEY = 'grh-quest-save-v2';
   const $ = (id) => document.getElementById(id);
   const itemById = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
   const chapterById = (id) => CHAPTERS.find((c) => c.id === id);
@@ -127,6 +127,7 @@
     forest: { floor: '#3f7d48', floor2: '#488852', wall: 'tree', water: '#2a6a8a', water2: '#3f86a8', sky: '#12301c' },
     cave:   { floor: '#4a4658', floor2: '#524e61', wall: 'cave', water: '#1f4d73', water2: '#2f6a96', sky: '#15131c' },
     plain:  { floor: '#7fc46a', floor2: '#8bd076', wall: 'tree', water: '#3b83c9', water2: '#5aa0e0', sky: '#24512c' },
+    library: { floor: '#8a6a4a', floor2: '#947452', wall: 'shelf', water: '#191428', water2: '#2a2140', sky: '#20150f' },
     tower:  { floor: '#6b5a7a', floor2: '#746384', wall: 'brick', water: '#191428', water2: '#2a2140', sky: '#150f20' },
     altar:  { floor: '#c9c3d9', floor2: '#d6d0e6', wall: 'pillar', water: '#0d0b24', water2: '#1d1a45', sky: '#0d0b24' },
   };
@@ -172,6 +173,15 @@
         for (let r = 0; r < 4; r++) for (let b = 0; b < 2; b++) R('#54436e', (b * 8 + (r % 2) * 4) % 16, r * 4, 7, 3);
         R('#2a2038', 0, 15, 16, 1);
         break;
+      case 'shelf': {
+        R('#3b2616', 0, 0, 16, 16); R('#5a3d22', 0, 0, 16, 1); R('#5a3d22', 0, 7, 16, 1); R('#5a3d22', 0, 14, 16, 2);
+        const cols = ['#b5483b', '#3f6fb0', '#4f9a5a', '#c9a23f', '#7d5aa8', '#d9d2c0'];
+        for (let r = 0; r < 2; r++) for (let b = 0; b < 7; b++) {
+          const hh = 4 + ((hsh >> (b + r * 7)) & 1);
+          R(cols[(hsh >> (b * 2 + r * 3)) % 6], 1 + b * 2, 1 + r * 7 + (6 - hh), 2, hh);
+        }
+        break;
+      }
       case 'pillar':
         R('#0d0b24', 0, 0, 16, 16);
         if (y > 0 && y < MH - 1 && x > 0 && x < MW - 1) {
@@ -373,7 +383,7 @@
       const missing = ch.shrines.filter((s) => !state.items.has(s));
       const pages = ch.sage.map((t) => ['賢者', t]);
       if (state.met.has('sage' + ch.id)) {
-        if (ch.id === 7) pages.splice(0, pages.length, ['賢者', state.theorems.has('grh') ? '見事じゃった。証明の全体像は「証明ノート」でいつでも振り返れるぞ。' : '北の祭壇へ行きなさい。6 つの定理を正しい順に組み上げるのじゃ。']);
+        if (ch.theme === 'altar') pages.splice(0, pages.length, ['賢者', state.theorems.has('grh') ? '見事じゃった。証明の全体像は「証明ノート」でいつでも振り返れるぞ。' : '北の祭壇へ行きなさい。手にした定理を正しい順に組み上げるのじゃ。']);
         else if (missing.length) pages.splice(0, pages.length, ['賢者', `まだ見つけていない概念が ${missing.length} つある。光る祠を調べなさい。`]);
         else if (!gateOpen()) pages.splice(0, pages.length, ['賢者', 'すべて揃ったな。東の門番のところへ行きなさい。']);
         else pages.splice(0, pages.length, ['賢者', '門は開いておる。先へ進みなさい。']);
@@ -472,7 +482,7 @@
   function closeModal() { $('modal').hidden = true; current = null; if (mode === 'puzzle' || mode === 'menu') mode = 'walk'; }
 
   function finishGame() {
-    const th = chapterById(7).theorem;
+    const th = CHAPTERS[CHAPTERS.length - 1].theorem;
     state.theorems.add('main'); state.theorems.add(th.id); state.cleared = true; save(); updateHud(); sfx.theorem();
     dialog([
       ['祭壇', '6 枚のカードが正しい順に並び、祭壇がまばゆく輝く……'],

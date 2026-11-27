@@ -124,6 +124,24 @@
     return out;
   };
 
+  // --- 追加の概念用 ---
+  // f(x) = x² + x + 2 (根は ω = (−1+√−7)/2。K = ℚ(√−7) を定める方程式)
+  L.fK = (x) => x * x + x + 2;
+  L.rootsMod = (m) => { const out = []; for (let x = 0; x < m; x++) if (L.fK(x) % m === 0) out.push(x); return out; };
+  // n の素因数分解 [[p, e], …]
+  L.factorize = (n) => { const out = []; for (let p = 2; n > 1; p++) { let e = 0; while (n % p === 0) { n /= p; e++; } if (e) out.push([p, e]); } return out; };
+  // 2×2 行列 [a,b,c,d]
+  L.mul2 = (A, B) => [A[0] * B[0] + A[1] * B[2], A[0] * B[1] + A[1] * B[3], A[2] * B[0] + A[3] * B[2], A[2] * B[1] + A[3] * B[3]];
+  L.pow2 = (A, n) => { let R = [1, 0, 0, 1]; for (let i = 0; i < n; i++) R = L.mul2(R, A); return R; };
+  L.isId2 = (A) => A[0] === 1 && A[1] === 0 && A[2] === 0 && A[3] === 1;
+  // C₂ = ⟨σ⟩ が ℤ/n に a 倍で作用するとき、c(σ) = m の種類: 'x' コサイクルでない / '0' コバウンダリ / '*' 非自明な類
+  L.cocycleKind = (m, n, a) => {
+    if (((1 + a) * m) % n !== 0) return 'x';
+    for (let k = 0; k < n; k++) if (L.mod((a - 1) * k, n) === m) return '0';
+    return '*';
+  };
+  L.val2 = (v, cap) => { if (v === 0) return cap; let e = 0; while (v % 2 === 0) { v /= 2; e++; } return e; };
+
   L.matVec = (K, f) => K.map((row) => L.dot(row, f));
   L.transpose = (K) => K[0].map((_, j) => K.map((row) => row[j]));
 
@@ -729,7 +747,7 @@
 
   P.selmer = {
     title: 'セルマーの祠',
-    intro: 'コサイクルの類 c = (c₁, c₂) ∈ (ℤ/3)² のうち、選んだ<b>局所条件</b>をすべてみたすものが「セルマー群」。<br>補助素点を<b>2 つまで</b>選んで条件を課し、セルマー群を <b>{0} だけ</b>にせよ。',
+    intro: 'H¹ の類 c = (c₁, c₂) ∈ (ℤ/3)² のうち、選んだ<b>局所条件</b>をすべてみたすものが「セルマー群」。<br>補助素点を<b>2 つまで</b>選んで条件を課し、セルマー群を <b>{0} だけ</b>にせよ。',
     hint: '2 つの条件が同じ直線を定めていると、群は小さくならない。v₂ の条件は v₁ の 2 倍になっていないか?',
     build(body) {
       const conds = [
@@ -760,6 +778,268 @@
           return sol.length === 1 ? OK : fail(`セルマー群の位数が ${sol.length}。まだ大きい。`);
         },
         cheat() { on.fill(false); on[0] = on[2] = true; upd(); },
+      };
+    },
+  };
+
+  // ---------- 追加: L 関数・p 進数・保型形式 ----------
+  P.lfunc = {
+    title: 'L 関数の祠',
+    intro: 'オイラー積 <b>L(s, χ) = Π<sub>p</sub> (1 − χ(p)·p<sup>−s</sup>)<sup>−1</sup></b> を展開して、級数 <b>Σ a(n)·n<sup>−s</sup></b> の係数を組み立てよ。<br>各因子は 1 + χ(p)p<sup>−s</sup> + χ(p)²p<sup>−2s</sup> + … なので、n = p₁<sup>e₁</sup>p₂<sup>e₂</sup>… の係数は χ(p₁)<sup>e₁</sup>·χ(p₂)<sup>e₂</sup>…。<br>素数での値は <b>χ(2) = +1, χ(3) = −1, χ(5) = −1, χ(7) = 0, χ(11) = +1</b> (法 7 の二次指標)。',
+    hint: '例: 12 = 2²·3 なので a(12) = χ(2)²·χ(3)。7 で割り切れる n の係数は 0。a(1) は空の積。',
+    build(body) {
+      const chi = { 2: 1, 3: -1, 5: -1, 7: 0, 11: 1 };
+      const ns = [1, 4, 6, 8, 9, 10, 12, 14, 15];
+      const a = {}; const btns = {};
+      const want = (n) => L.factorize(n).reduce((v, [p, e]) => v * chi[p] ** e, 1);
+      const row = h('div', { class: 'pz-row pz-wrap' });
+      for (const n of ns) {
+        a[n] = 0;
+        btns[n] = cycler([0, 1, -1], ['0', '+1', '−1'], 0, (v) => { a[n] = v; }, 'pz-pm');
+        row.appendChild(h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'a(' + n + ')'), btns[n]));
+      }
+      body.appendChild(row);
+      body.appendChild(h('p', { class: 'pz-note' }, '和と積が一致するのは、どの n も素数の積にただ 1 通りに分解できるから。対数微分をとると −L′/L = Σ χ(n)Λ(n)·n^{−s} ―― 素数べきだけが残る。'));
+      return {
+        check() {
+          const bad = ns.find((n) => a[n] !== want(n));
+          if (bad == null) return OK;
+          const f = L.factorize(bad).map(([p, e]) => p + (e > 1 ? sup(e) : '')).join('·') || '(空の積)';
+          return fail(`a(${bad}) が違う。${bad} = ${f}。`);
+        },
+        cheat() { for (const n of ns) { a[n] = want(n); btns[n].set(a[n]); } },
+      };
+    },
+  };
+
+  P.padic = {
+    title: 'p 進数の祠',
+    intro: '方程式 <b>x² + x + 2 = 0</b> (根は (−1±√−7)/2) を、2 進数の世界で解く。<br>x = b₀ + 2b₁ + 4b₂ + 8b₃ の桁 (0 か 1) を決めて、<b>x² + x + 2 ≡ 0 (mod 16)</b> となるようにせよ。<br>mod 2 → mod 4 → mod 8 → mod 16 と、下の桁から順に決めていける。これを無限に続けた極限が 2 進数 ℤ₂ の元。',
+    hint: '下の桁を決めたら変えない。b₀ はどちらでもよい (2 通りの根に対応)。次に mod 4 が ✓ になる b₁ を探す。',
+    build(body) {
+      const b = [0, 0, 0, 0];
+      const info = h('div', { class: 'pz-mono' });
+      const x = () => b[0] + 2 * b[1] + 4 * b[2] + 8 * b[3];
+      const upd = () => {
+        const v = L.fK(x());
+        info.textContent = `x = ${x()}    x² + x + 2 = ${v}\n` + [2, 4, 8, 16].map((m) => `mod ${String(m).padStart(2)}: ${String(v % m).padStart(2)}  ${v % m === 0 ? '✓' : '✗'}`).join('\n');
+      };
+      const btns = [0, 1, 2, 3].map((i) => cycler([0, 1], ['0', '1'], 0, (v) => { b[i] = v; upd(); }));
+      body.appendChild(h('div', { class: 'pz-row' }, btns.map((bt, i) => h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, `b${'₀₁₂₃'[i]} (${2 ** i} の位)`), bt))));
+      body.appendChild(info); upd();
+      body.appendChild(h('p', { class: 'pz-note' }, '√−7 は有理数ではないが、2 進数の中には存在する ―― 2 が K = ℚ(√−7) で分解することの現れ。'));
+      return {
+        check() { return L.fK(x()) % 16 === 0 ? OK : fail(`x = ${x()} では x² + x + 2 = ${L.fK(x())} ≡ ${L.fK(x()) % 16} (mod 16)。`); },
+        cheat() { [1, 0, 1, 0].forEach((v, i) => { b[i] = v; btns[i].set(v); }); upd(); },
+      };
+    },
+  };
+
+  P.autoform = {
+    title: '保型形式の祠',
+    intro: '類が 2 つ (A, B) だけの世界の「保型形式」は、関数 f = (f(A), f(B))。<br>ヘッケ作用素 T は隣の類の値を足す: A の隣は A が 1 個と B が 2 個、B の隣は A が 3 個。つまり<br><b>(Tf)(A) = f(A) + 2f(B),  (Tf)(B) = 3f(A)</b>。<br><b>Tf = λf</b> となる<b>固有形式</b>を構成せよ。ただし定数関数 (f(A) = f(B)) は除く。',
+    hint: '定数関数は固有値 3。もう 1 つの固有値は負の数。Tf と f が比例するように、f(A) と f(B) の符号を逆にして比を調整しよう。',
+    build(body) {
+      const f = [0, 0];
+      const info = h('div', { class: 'pz-mono' });
+      const T = (v) => [v[0] + 2 * v[1], 3 * v[0]];
+      const upd = () => {
+        const t = T(f);
+        const par = t[0] * f[1] - t[1] * f[0] === 0 && (f[0] || f[1]);
+        const lam = par ? (f[0] ? t[0] / f[0] : t[1] / f[1]) : null;
+        info.textContent = `f  = (${fmt(f[0])}, ${fmt(f[1])})\nTf = (${fmt(t[0])}, ${fmt(t[1])})` + (par ? `   = ${fmt(lam)}·f   ← 固有形式 (固有値 λ = ${fmt(lam)})` : '   f の定数倍になっていない');
+      };
+      const steps = [0, 1].map((i) => stepper(-5, 5, 0, (v) => { f[i] = v; upd(); }));
+      body.appendChild(h('div', { class: 'pz-row' },
+        h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'f(A)'), steps[0]),
+        h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'f(B)'), steps[1])));
+      body.appendChild(info); upd();
+      body.appendChild(h('p', { class: 'pz-note' }, '本物の証明では、類は格子の同型類、T は素点ごとのヘッケ作用素。固有値の列が、付随するガロア表現と L 関数を決める。'));
+      return {
+        check() {
+          if (!f[0] && !f[1]) return fail('f = 0 は固有形式に数えない。');
+          const t = T(f);
+          if (t[0] * f[1] - t[1] * f[0] !== 0) return fail('Tf が f の定数倍になっていない。');
+          if (f[0] === f[1]) return fail('これは定数関数 (固有値 3)。定数でない固有形式を探そう。');
+          return OK;
+        },
+        cheat() { f[0] = 2; f[1] = -3; steps[0].set(2); steps[1].set(-3); upd(); },
+      };
+    },
+  };
+
+  // ---------- 追加: ガロアの書庫 ----------
+  P.galois = {
+    title: 'ガロア群の祠',
+    intro: '方程式 <b>x⁴ + x³ + x² + x + 1 = 0</b> の根は ζ, ζ², ζ³, ζ⁴ (ζ は 1 の原始 5 乗根)。<br>ガロア群の元 σ は根の入れ替えで、<b>積を保つ</b>: σ(ζ<sup>k</sup>) = σ(ζ)<sup>k</sup>。<br><b>σ(ζ) = ζ²</b> と決めたとき、残りの根の行き先を決めて σ を完成させよ。',
+    hint: 'σ(ζ²) = σ(ζ)² = (ζ²)² = ζ⁴。指数は 5 で割った余りで考える (ζ⁵ = 1)。',
+    build(body) {
+      const map = { 1: 2, 2: 1, 3: 1, 4: 1 };
+      const Wd = 420, Ht = 230, cx = 210, cy = 115, Rr = 85;
+      const cv = h('canvas', { width: Wd, height: Ht, class: 'pz-canvas' }); const ctx = cv.getContext('2d');
+      const info = h('div', { class: 'pz-mono' });
+      const pos = (k) => [cx + Rr * Math.cos(2 * Math.PI * k / 5), cy - Rr * Math.sin(2 * Math.PI * k / 5)];
+      const draw = () => {
+        ctx.fillStyle = '#10131f'; ctx.fillRect(0, 0, Wd, Ht);
+        ctx.strokeStyle = '#2c3350'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, Rr, 0, 7); ctx.stroke();
+        for (let k = 1; k <= 4; k++) {
+          const [x1, y1] = pos(k), [x2, y2] = pos(map[k]);
+          if (map[k] !== k) {
+            ctx.strokeStyle = '#ffd45e'; ctx.fillStyle = '#ffd45e'; ctx.lineWidth = 2;
+            const dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d;
+            const ex = x2 - ux * 12, ey = y2 - uy * 12;
+            ctx.beginPath(); ctx.moveTo(x1 + ux * 10, y1 + uy * 10); ctx.lineTo(ex, ey); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex - ux * 9 - uy * 5, ey - uy * 9 + ux * 5); ctx.lineTo(ex - ux * 9 + uy * 5, ey - uy * 9 - ux * 5); ctx.fill();
+          }
+        }
+        for (let k = 0; k <= 4; k++) {
+          const [x, y] = pos(k);
+          ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fillStyle = k ? '#7fa6e8' : '#5d6890'; ctx.fill();
+          ctx.fillStyle = '#c9d2f0'; ctx.font = '13px sans-serif';
+          ctx.fillText(k ? 'ζ' + (k > 1 ? sup(k) : '') : '1', x + (x > cx ? 11 : -26), y + (y > cy ? 18 : -9));
+        }
+        const img = new Set([1, 2, 3, 4].map((k) => map[k]));
+        info.textContent = img.size === 4 ? '根の入れ替え (置換) になっている。' : '同じ行き先が重なっている ―― まだ入れ替えになっていない。';
+      };
+      const btns = {};
+      const cells = [h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'σ(ζ)'), h('b', {}, 'ζ²'))];
+      for (const k of [2, 3, 4]) {
+        btns[k] = cycler([1, 2, 3, 4], ['ζ', 'ζ²', 'ζ³', 'ζ⁴'], 1, (v) => { map[k] = v; draw(); });
+        cells.push(h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'σ(ζ' + sup(k) + ')'), btns[k]));
+      }
+      body.appendChild(cv); body.appendChild(h('div', { class: 'pz-row' }, cells)); body.appendChild(info); draw();
+      body.appendChild(h('p', { class: 'pz-note' }, 'この σ を 4 回繰り返すと元に戻る。ガロア群は (ℤ/5)ˣ と同じ形の、位数 4 の巡回群。'));
+      return {
+        check() {
+          const bad = [2, 3, 4].find((k) => map[k] !== (2 * k) % 5);
+          return bad == null ? OK : fail(`σ(ζ${sup(bad)}) が違う。σ(ζ${sup(bad)}) = σ(ζ)${sup(bad)} = (ζ²)${sup(bad)} のはず。`);
+        },
+        cheat() { for (const k of [2, 3, 4]) { map[k] = (2 * k) % 5; btns[k].set(map[k]); } draw(); },
+      };
+    },
+  };
+
+  P.frobenius = {
+    title: 'フロベニウスの祠',
+    intro: 'K = ℚ(√−7) を定める方程式 <b>f(x) = x² + x + 2</b> を、素数 p を法として解く。各 p について、<b>f(x) ≡ 0 (mod p) の解 x を 1 つ</b>選べ。解が無ければ「なし」のまま。<br>解がある ⇔ p は K で分解 ⇔ <b>Frob<sub>p</sub> = 1</b>。 解がない ⇔ p は惰性 ⇔ <b>Frob<sub>p</sub> = c</b> (複素共役)。',
+    hint: 'x = 0, 1, …, p−1 を順に試す。p = 11 には解がある。第 1 章の χ_K(p) = (p/7) と見比べてみよう: 平方剰余 1, 2, 4 に入る p だけが分解する。',
+    build(body) {
+      const ps = [2, 3, 5, 11, 13];
+      const x = {}; const steps = {}; const lines = {};
+      const upd = (p) => {
+        const v = x[p];
+        lines[p].textContent = v < 0 ? 'Frob = c  (惰性・解なし)   オイラー因子 (1 + p⁻ˢ)⁻¹' : `f(${v}) = ${L.fK(v)} ≡ ${L.fK(v) % p} (mod ${p})` + (L.fK(v) % p === 0 ? '  ✓  Frob = 1 (分解)   オイラー因子 (1 − p⁻ˢ)⁻¹' : '  ✗');
+      };
+      for (const p of ps) {
+        x[p] = -1;
+        steps[p] = stepper(-1, p - 1, -1, (v) => { x[p] = v; upd(p); }, (v) => (v < 0 ? 'なし' : String(v)));
+        lines[p] = h('span', { class: 'pz-label' });
+        body.appendChild(h('div', { class: 'pz-row' }, h('b', { style: 'min-width:56px' }, 'p = ' + p), steps[p], lines[p]));
+        upd(p);
+      }
+      body.appendChild(h('p', { class: 'pz-note' }, 'L(s, χ_K) のオイラー因子は Frob_p だけで決まる: χ_K(p) = +1 (Frob = 1) か −1 (Frob = c)。'));
+      return {
+        check() {
+          for (const p of ps) {
+            const roots = L.rootsMod(p);
+            if (roots.length && x[p] < 0) return fail(`p = ${p} には解がある。探してみよう。`);
+            if (x[p] >= 0 && !roots.includes(x[p])) return fail(`p = ${p}: x = ${x[p]} は解ではない。`);
+          }
+          return OK;
+        },
+        cheat() { for (const p of ps) { const r = L.rootsMod(p); x[p] = r.length ? r[0] : -1; steps[p].set(x[p]); upd(p); } },
+      };
+    },
+  };
+
+  P.galrep = {
+    title: 'ガロア表現の祠',
+    intro: 'ガロア群 G = Gal(ℚ(ζ₅)/ℚ) は σ (ζ ↦ ζ²) で生成される位数 4 の巡回群。<br>行列 <b>M = ρ(σ)</b> を決めて 2 次元表現 ρ: G → GL₂(ℤ) を構成せよ。条件: <b>M⁴ = I</b> (群の関係を保つ) かつ <b>M² ≠ I</b> (σ² を見分けられる)。成分は −1, 0, 1。',
+    hint: '「90° 回転」の行列を思い出そう。',
+    build(body) {
+      const M = [0, 0, 0, 0];
+      const info = h('div', { class: 'pz-mono' });
+      const show = (A) => `[${fmt(A[0])} ${fmt(A[1])}; ${fmt(A[2])} ${fmt(A[3])}]`;
+      const upd = () => {
+        const M2 = L.pow2(M, 2), M4 = L.pow2(M, 4);
+        const tr = (k) => { const A = L.pow2(M, k); return fmt(A[0] + A[3]); };
+        info.textContent = `M² = ${show(M2)}   M⁴ = ${show(M4)}\n\n` +
+          'p            :   2    3    7   11   19\n' +
+          'Frob_p       :   σ   σ³    σ    1   σ²     (p ≡ 2^k mod 5 なら Frob_p = σ^k)\n' +
+          `tr ρ(Frob_p) : ${[1, 3, 1, 0, 2].map((k) => tr(k).padStart(3)).join('  ')}`;
+      };
+      const btns = [0, 1, 2, 3].map((i) => cycler([0, 1, -1], ['0', '1', '−1'], 0, (v) => { M[i] = v; upd(); }));
+      body.appendChild(h('div', { class: 'pz-matrix' },
+        h('div', { class: 'pz-mrow' }, btns[0], btns[1]),
+        h('div', { class: 'pz-mrow' }, btns[2], btns[3])));
+      body.appendChild(info); upd();
+      body.appendChild(h('p', { class: 'pz-note' }, 'フロベニウス元の行列のトレースを素数ごとに並べた列が、表現の「指紋」。保型形式の側ではこれがヘッケ固有値にあたる。'));
+      return {
+        check() {
+          if (!L.isId2(L.pow2(M, 4))) return fail('M⁴ ≠ I。σ⁴ = 1 という群の関係が保たれていない。');
+          if (L.isId2(L.pow2(M, 2))) return fail('M² = I になってしまった。σ² と 1 を見分けられない。');
+          return OK;
+        },
+        cheat() { [0, -1, 1, 0].forEach((v, i) => { M[i] = v; btns[i].set(v); }); upd(); },
+      };
+    },
+  };
+
+  P.cohomology = {
+    title: 'コホモロジーの祠',
+    intro: '群 G = {1, σ} が M = ℤ/12 に <b>σ·m = 5m</b> で作用する。写像 c: G → M は c(σ) = m で決まる。<br>・<b>コサイクル</b>の条件: c(σ²) = c(σ) + σ·c(σ) が 0、つまり <b>m + 5m ≡ 0 (mod 12)</b><br>・<b>コバウンダリ</b> (自明なコサイクル): ある n で <b>m = σ·n − n = 4n</b><br>各 m を分類せよ: <b>✗</b> コサイクルでない / <b>0</b> コバウンダリ / <b>★</b> 自明でない類。H¹ = コサイクル ÷ コバウンダリ。',
+    hint: '6m が 12 の倍数になるのは m が偶数のとき。4n の形で書けるのは 0, 4, 8。',
+    build(body) {
+      const kind = {}; const btns = {};
+      const info = h('p', {});
+      const upd = () => {
+        const c = Object.values(kind);
+        const z = c.filter((k) => k !== 'x').length, bd = c.filter((k) => k === '0').length;
+        info.textContent = `コサイクル ${z} 個、コバウンダリ ${bd} 個` + (bd && z % bd === 0 ? ` → H¹ の位数は ${z / bd}` : '');
+      };
+      const row = h('div', { class: 'pz-row pz-wrap' });
+      for (let m = 0; m < 12; m++) {
+        kind[m] = 'x';
+        btns[m] = cycler(['x', '0', '*'], ['✗', '0', '★'], 'x', (v) => { kind[m] = v; upd(); }, 'pz-coh');
+        row.appendChild(h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, 'm = ' + m), btns[m]));
+      }
+      body.appendChild(row); body.appendChild(info); upd();
+      body.appendChild(h('p', { class: 'pz-note' }, 'ガロアコホモロジーでは G がガロア群、M がガロア表現 (を ℓ のべきで割ったもの)。H¹ の類が表現の拡大 ―― 保型形式の合同 ―― を分類する。'));
+      return {
+        check() {
+          const wrong = Object.keys(kind).filter((m) => kind[m] !== L.cocycleKind(+m, 12, 5));
+          return wrong.length ? fail(`分類の違う m が ${wrong.length} 個ある。`) : OK;
+        },
+        cheat() { for (let m = 0; m < 12; m++) { kind[m] = L.cocycleKind(m, 12, 5); btns[m].set(kind[m]); } upd(); },
+      };
+    },
+  };
+
+  P.filtration = {
+    title: 'フィルトレーションの祠',
+    intro: 'ℤ/16 には入れ子の列 <b>Fil⁰ ⊃ Fil¹ ⊃ Fil² ⊃ Fil³ ⊃ Fil⁴ = {0}</b> がある (Fil<sup>i</sup> = 2<sup>i</sup> の倍数全体)。<br>各元について、それが属する<b>いちばん深い段 i</b> を答えよ。すると元は「層」gr<sup>i</sup> = Fil<sup>i</sup> ∖ Fil<sup>i+1</sup> に仕分けられる。',
+    hint: '2 で何回割り切れるかを数える。0 はすべての段に入っているので、いちばん深い Fil⁴。',
+    build(body) {
+      const els = [1, 2, 4, 6, 8, 10, 12, 0];
+      const lv = {}; const steps = {};
+      const info = h('div', { class: 'pz-mono' });
+      const upd = () => {
+        info.textContent = [0, 1, 2, 3, 4].map((i) => `${'  '.repeat(i)}Fil${sup(i)} の層: { ${els.filter((e) => lv[e] === i).join(', ')} }`).join('\n');
+      };
+      const row = h('div', { class: 'pz-row pz-wrap' });
+      for (const e of els) {
+        lv[e] = 0;
+        steps[e] = stepper(0, 4, 0, (v) => { lv[e] = v; upd(); }, (v) => 'Fil' + sup(v));
+        row.appendChild(h('div', { class: 'pz-cell' }, h('div', { class: 'pz-label' }, '元 ' + e), steps[e]));
+      }
+      body.appendChild(row); body.appendChild(info); upd();
+      body.appendChild(h('p', { class: 'pz-note' }, 'p 進ホッジ理論では、ガロア表現に付随する空間のホッジ・フィルトレーションを考える。層が 0 でない段の番号 (飛び) がホッジ・テイト重みで、保型形式の「重み」に対応する。'));
+      return {
+        check() {
+          const bad = els.find((e) => lv[e] !== L.val2(e, 4));
+          return bad == null ? OK : fail(`元 ${bad} の段が違う。`);
+        },
+        cheat() { for (const e of els) { lv[e] = L.val2(e, 4); steps[e].set(lv[e]); } upd(); },
       };
     },
   };

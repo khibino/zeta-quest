@@ -96,6 +96,8 @@ code { font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 12px
 .pz-cycle.pz-wide { min-width: 68px; }
 .pz-cycle[data-v="-1"] { background: #5b2740; }
 .pz-cycle.pz-ab[data-v="a"] { background: #8a6a12; } .pz-cycle.pz-ab[data-v="b"] { background: #1f6a5a; }
+.pz-cycle.pz-coh[data-v="0"] { background: #1f6a5a; } .pz-cycle.pz-coh[data-v="*"] { background: #8a6a12; }
+.pz-cycle[data-v="1"].pz-pm { background: #1f4f6a; }
 .pz-step { display: inline-flex; align-items: center; gap: 4px; }
 .pz-step button { width: 30px; padding: 2px 0; }
 .pz-step-val { min-width: 34px; text-align: center; font-weight: bold; }

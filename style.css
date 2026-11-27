@@ -140,3 +140,7 @@ code { font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 12px
 .note.got { border-left-color: var(--gold); opacity: 1; }
 .note-head { font-weight: bold; }
 .note p { margin: 2px 0; font-size: 13px; }
+
+/* ---------- デバッグ ---------- */
+#btn-debug, button.debug { border-color: #ff8f8f; color: #ffc9c9; }
+.dbg-btn { font-size: 13px; padding: 2px 10px; }

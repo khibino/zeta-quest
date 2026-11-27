@@ -38,10 +38,14 @@ Lean 4 による一般化リーマン予想の証明 ([grh-lean](https://github.
 - `js/game.js` ― RPG エンジン (描画・移動・会話・セーブ)
 - `test/` ― テスト。`sh test/run.sh` で、ロジック (node)・全パズルの UI・全章の通しプレイ (ヘッドレス Chrome) を実行
 
-デバッグ用 URL: `index.html?ch=4` (第 4 章から開始)、`index.html?ch=4&puzzle=theta` (パズルを直接開く)。この場合セーブはされません。
+## デバッグモード
 
-## 出典
+URL に `?debug` を付けて開くと (例: `index.html?debug`)、タイトルを飛ばして始まり、画面上部に「デバッグ」ボタン (キー `0`) が出ます。
 
-章立てとゲーム内の解説文は、[grh-lean](https://github.com/lsernau/grh-lean) の `grh/` にある `README.md`・`GUIDE.md`・`INDEX.md` と
-各ファイル冒頭の説明を要約したものです (Copyright 2026 Anthropic, PBC、Apache License 2.0)。
-同リポジトリの README によれば、証明は Levent Alpöge 氏によるもの (Claude と共同) です。
+- 好きな章の入口へ移動 (前の章まではクリア済みの状態)、または章をクリア済みにして移動
+- 任意のパズルを直接開く。パズル画面には「正解をセット」ボタンが付く
+- 終章のパズル・エンディング・門番や賢者の会話を直接見る
+
+URL で直接指定することもできます: `?debug&ch=4` (第 4 章から)、`?debug&puzzle=theta` (パズルを開く)、`?debug&puzzle=theta&cheat=1` (正解をセットして開く)。
+
+デバッグモード中はセーブデータを読み書きしないので、通常プレイの進行状況には影響しません。

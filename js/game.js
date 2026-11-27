@@ -27,7 +27,9 @@
   const keys = new Set();
   let soundOn = true;
 
+  let debug = false; // デバッグモードではセーブデータを読み書きしない
   function save() {
+    if (debug) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         chapter: state.chapter, x: state.x, y: state.y, dir: state.dir,
@@ -460,6 +462,7 @@
     mk('判定する', 'primary', checkPuzzle);
     mk('ヒント', '', () => { msg.textContent = 'ヒント: ' + pz.hint; msg.className = 'hint'; });
     mk('やめる', '', () => closeModal());
+    if (debug) mk('[debug] 正解をセット', 'debug', () => { current.ctl.cheat(); msg.textContent = '正解をセットした。「判定する」で確認できる。'; msg.className = 'hint'; });
     $('modal').hidden = false;
   }
   function checkPuzzle() {
@@ -552,6 +555,46 @@
     $('modal').hidden = false;
   }
 
+  // ------------------------------------------------------------------
+  // デバッグメニュー (?debug を付けて開いたときだけ)
+  // ------------------------------------------------------------------
+  function debugJump(c, opts) {
+    // 第 c 章の入口へ。それより前の章はクリア済み、c 章以降は未取得の状態にする
+    state.items = new Set(); state.theorems = new Set(); state.met = new Set(); state.cleared = false;
+    for (const ch of CHAPTERS) if (ch.id < c) { ch.shrines.forEach((x) => state.items.add(x)); state.theorems.add(ch.theorem.id); }
+    if (opts && opts.clear) { const ch = chapterById(c); ch.shrines.forEach((x) => state.items.add(x)); if (ch.theme !== 'altar') state.theorems.add(ch.theorem.id); }
+    enterChapter(c, 'start'); $('title').hidden = true; $('dialog').hidden = true; mode = 'walk';
+  }
+  function openDebugMenu() {
+    if (mode !== 'walk') return;
+    mode = 'menu'; keys.clear();
+    $('modal-title').textContent = 'デバッグメニュー';
+    $('modal-intro').textContent = 'デバッグモード中はセーブデータを読み書きしない。通常のプレイには影響しない。';
+    $('modal-msg').textContent = ''; $('modal-msg').className = '';
+    const body = $('modal-body'); body.innerHTML = '';
+    const btn = (label, fn, cls) => { const b = document.createElement('button'); b.textContent = label; b.className = 'dbg-btn ' + (cls || ''); b.addEventListener('click', fn); return b; };
+    const sec = (title) => { const h = document.createElement('div'); h.className = 'inv-head'; h.textContent = title; body.appendChild(h); const r = document.createElement('div'); r.className = 'inv-row'; body.appendChild(r); return r; };
+    let r = sec('章の入口へ移動 (前の章まではクリア済み、その章は未着手)');
+    for (const ch of CHAPTERS) r.appendChild(btn(ch.name, () => { closeModal(); debugJump(ch.id); toast(ch.name); }));
+    r = sec('章をクリア済みにして移動 (概念をすべて取得し、門が開いた状態)');
+    for (const ch of CHAPTERS) if (ch.theme !== 'altar') r.appendChild(btn(ch.name, () => { closeModal(); debugJump(ch.id, { clear: true }); toast(ch.name + ' (クリア済み)'); }));
+    for (const ch of CHAPTERS) {
+      if (!ch.shrines.length) continue;
+      r = sec('パズルを開く ― ' + ch.name);
+      for (const id of ch.shrines) r.appendChild(btn((state.items.has(id) ? '✔ ' : '') + itemById[id].name, () => { closeModal(); if (state.chapter !== ch.id) debugJump(ch.id); state.items.delete(id); updateHud(); openPuzzle(id); }));
+    }
+    r = sec('終章');
+    r.appendChild(btn('祭壇のパズルを開く', () => { closeModal(); debugJump(CHAPTERS.length); openPuzzle('final'); }));
+    r.appendChild(btn('エンディングを見る', () => { closeModal(); debugJump(CHAPTERS.length); finishGame(); }));
+    r = sec('いまの章');
+    r.appendChild(btn('この章の概念をすべて取得', () => { map.ch.shrines.forEach((x) => state.items.add(x)); updateHud(); closeModal(); toast('概念を取得した'); }));
+    r.appendChild(btn('門番の会話 (定理の獲得) を見る', () => { closeModal(); if (map.ch.theme === 'altar') return; map.ch.shrines.forEach((x) => state.items.add(x)); state.theorems.delete(map.ch.theorem.id); updateHud(); gateTalk(); }));
+    r.appendChild(btn('賢者の最初の会話を見る', () => { closeModal(); dialog(map.ch.sage.map((t) => ['賢者', t])); }));
+    const foot = $('modal-foot'); foot.innerHTML = '';
+    foot.appendChild(btn('とじる', closeModal, 'primary'));
+    $('modal').hidden = false;
+  }
+
   function updateHud() {
     if (!map) return;
     const ch = map.ch;
@@ -576,6 +619,7 @@
       if (mode === 'puzzle' || mode === 'menu') closeModal();
     } else if (e.key === 'i' || e.key === 'I') openMenu('items');
     else if (e.key === 'n' || e.key === 'N') openMenu('notes');
+    else if (debug && e.key === '0') openDebugMenu();
   });
   window.addEventListener('keyup', (e) => keys.delete(e.key));
   window.addEventListener('blur', () => keys.clear());
@@ -625,16 +669,21 @@
 
   function loop(t) { update(t); render(t); requestAnimationFrame(loop); }
 
-  // デバッグ用: ?ch=3 でその章から (前の章までクリア済み)、?puzzle=id でパズルを直接開く
+  // デバッグモード: URL に ?debug を付ける。HUD に「デバッグ」ボタンが出て、章の移動やパズルの直接起動ができる。
+  //   ?debug&ch=4          第 4 章の入口から (前の章まではクリア済み)
+  //   ?debug&puzzle=theta  そのパズルを直接開く (cheat=1 を足すと正解をセットした状態で開く)
+  // ?ch= や ?puzzle= だけでもデバッグモードになる。
   const qs = new URLSearchParams(location.search);
-  if (qs.has('ch') || qs.has('puzzle')) {
-    const c = Math.max(1, Math.min(CHAPTERS.length, +(qs.get('ch') || 1)));
-    for (const ch of CHAPTERS) if (ch.id < c) { ch.shrines.forEach((s) => state.items.add(s)); state.theorems.add(ch.theorem.id); }
-    enterChapter(c, 'start'); $('title').hidden = true; mode = 'walk';
-    save = () => {};
-    if (qs.has('puzzle')) openPuzzle(qs.get('puzzle'));
+  if (qs.has('debug') || qs.has('ch') || qs.has('puzzle')) {
+    debug = true;
+    $('btn-debug').hidden = false;
+    $('btn-debug').addEventListener('click', openDebugMenu);
+    const pid = qs.get('puzzle');
+    const pch = pid && itemById[pid] ? itemById[pid].chapter : pid === 'final' ? CHAPTERS.length : 1;
+    debugJump(Math.max(1, Math.min(CHAPTERS.length, +(qs.get('ch') || pch))));
+    if (pid) openPuzzle(pid);
     if (qs.has('cheat') && current) current.ctl.cheat();
-    if (qs.has('menu')) openMenu(qs.get('menu'));
+    if (qs.has('menu')) { if (qs.get('menu') === 'debug') openDebugMenu(); else openMenu(qs.get('menu')); }
   } else {
     map = parseMap(chapterById(1));
   }

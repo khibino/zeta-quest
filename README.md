@@ -18,13 +18,14 @@ Lean 4 による一般化リーマン予想の証明 ([grh-lean](https://github.
 
 | 章 | 証明の該当部分 (`src/` 以下) | 集める概念 | 門で得る定理 |
 |---|---|---|---|
-| 1 零点の岬 | `New/Reduction/Zeros` | 二次指標 χ_K、フォン・マンゴルト関数、素数和の剰余 R_q | 片側判定法 |
+| 1 零点の岬 | `New/Reduction/Zeros` | 二次指標 χ_K、フォン・マンゴルト関数、素数和の剰余 R_q、L 関数とオイラー積 | 片側判定法 |
 | 2 データの峠 | `New/Reduction/Data` | パラメータ (q₀, d)、CM 体と π_N、a/b-素点、疎な集合 | 許容データの存在 |
-| 3 格子の森 | `New/Reduction/Lattices` | 高さと積公式、共体積とアダマールの不等式、指数 | 素数ごとのツイスト (積公式) |
-| 4 テータの洞窟 | `New/Derivatives`, `New/UpperBound` | 定符号エルミート空間、テータ級数、ジェットと階乗、シーソー恒等式 | 定理 A (短い形式) |
+| 3 格子の森 | `New/Reduction/Lattices` | 高さと積公式、共体積とアダマールの不等式、指数、p 進数 | 素数ごとのツイスト (積公式) |
+| 4 テータの洞窟 | `New/Derivatives`, `New/UpperBound` | 定符号エルミート空間、テータ級数、ジェットと階乗、シーソー恒等式、保型形式とヘッケ作用素 | 定理 A (短い形式) |
 | 5 充填の平原 | `New/Spanning` | ポアンカレ級数、張る平行移動 | 定理 B (十分な形式) |
-| 6 行列式の塔 | `New/Determinant`, `New/OneLift`, `New/Congruences` | m 重ツイスト、グラム行列式、小さなセルマー群 | 定理 C (整形式は長い) |
-| 終 主不等式の祭壇 | `New/Reduction/MainInequality`, `OneSidedBound` | (6 つの定理を論理の順に並べる) | 主不等式 → GRH → RH |
+| 6 行列式の塔 | `New/Determinant`, `New/OneLift` | m 重ツイスト、グラム行列式 | 鎖の行列式と L 値 |
+| 7 ガロアの書庫 | `New/Congruences`, `Lib/GaloisRep`, `Lib/PadicHodge` | 代数方程式とガロア群、フロベニウス元、ガロア表現、コホモロジー H¹、フィルトレーション、小さなセルマー群 | 定理 C (整形式は長い) |
+| 終 主不等式の祭壇 | `New/Reduction/MainInequality`, `OneSidedBound` | (定理を論理の順に並べる) | 主不等式 → GRH → RH |
 
 パズルは各概念の**小さな模型**であり、証明そのものではありません
 (例: d = 7, q₀ = 16 での素数和、ℚ(√−7) の整数環のテータ級数、(ℤ/13)ˣ の指標など)。
